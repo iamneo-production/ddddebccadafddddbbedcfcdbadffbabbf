@@ -1,69 +1,61 @@
-import Stopwatch from "../components/Stopwatch/Stopwatch";
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React, { useState, useEffect } from 'react';
 
+function Stopwatch() {
+  const [time, setTime] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-describe('Testing Stopwatch', () => {
+  useEffect(() => {
+    let intervalId;
+    if (isActive) {
+      intervalId = setInterval(() => {
+        setTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [isActive]);
 
-    jest.setTimeout(30000);
+  const handleStart = () => {
+    setIsActive(true);
+  };
 
+  const handlePause = () => {
+    setIsPaused(true);
+    setIsActive(false);
+  };
 
-    test('testcase1', () => {
-        
-        act(() => {
-            render(<Stopwatch />);
-            jest.advanceTimersByTime(1000);
-          });
-        
-        
-        const start = screen.getByTestId('start');
-        const reset = screen.getByTestId('reset');
+  const handleResume = () => {
+    setIsPaused(false);
+    setIsActive(true);
+  };
 
-        const time = screen.getByTestId('time');
+  const handleReset = () => {
+    setTime(0);
+    setIsPaused(false);
+    setIsActive(false);
+  };
 
-        expect(reset).toHaveAttribute('disabled');
-        expect(time.textContent.split(' ').join('')).toBe('00:00:00');
+  const formatTime = (timeInSeconds) => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds - (hours * 3600)) / 60);
+    const seconds = timeInSeconds - (hours * 3600) - (minutes * 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
 
-    }, 30000);
+  return (
+    <div style={{display: "flex", flexDirection: "column", alignItems: "center", border: "2px solid #00BFFF", padding: "20px"}}>
+      <h1 style={{textAlign: "center"}}>React Stopwatch</h1>
+      <p style={{fontSize: "3rem"}} data-testid="time">{formatTime(time)}</p>
+      {isPaused ? (
+        <button style={{background: "#00BFFF", color: "white", fontWeight: "bold", fontSize: "1rem", padding: "10px 20px", margin: "10px"}} data-testid="resume" onClick={handleResume}>Resume</button>
+      ) : isActive ? (
+        <button style={{background: "#FF6347", color: "white", fontWeight: "bold", fontSize: "1rem", padding: "10px 20px", margin: "10px"}} data-testid="pause" onClick={handlePause}>Pause</button>
+      ) : (
+        <button style={{background: "#008000", color: "white", fontWeight: "bold", fontSize: "1rem", padding: "10px 20px", margin: "10px"}} data-testid="start" onClick={handleStart}>Start</button>
+      )}
+      <button style={{background: "#D3D3D3", color: "black", fontWeight: "bold", fontSize: "1rem", padding: "10px 20px", margin: "10px"}} data-testid="reset" onClick={handleReset} disabled={!isActive && time === 0}>Reset</button>
+    </div>
+  );
+}
 
-    test('testcase2', async () => {
-
-        
-        act(() => {
-            render(<Stopwatch />);
-        });
-        
-        const start = screen.getByTestId('start');
-        const reset = screen.getByTestId('reset');
-
-        const time = screen.getByTestId('time');
-
-        fireEvent.click(start);
-
-        expect(screen.queryByTestId('start')).toBeNull();
-        expect(screen.queryByTestId('pause')).toBeInTheDocument();
-        expect(reset).not.toHaveAttribute('disabled');
-        expect(time.textContent.split(' ').join('')).toBe('00:00:00');
-        await new Promise((r) => setTimeout(r, 2000));
-        await waitFor(() => {
-            expect(screen.getByTestId('time').textContent.split(' ').join('')).toBe('00:00:02');
-        })
-
-        await new Promise((r) => setTimeout(r, 5000));
-        await waitFor(() => {
-            expect(screen.getByTestId('time').textContent.split(' ').join('')).toBe('00:00:07');
-        })
-
-        const pause = screen.queryByTestId('pause');
-        fireEvent.click(pause);
-
-        await new Promise((r) => setTimeout(r, 1000));
-        await waitFor(() => {
-            expect(screen.getByTestId('time').textContent.split(' ').join('')).toBe('00:00:07');
-        })
-
-        fireEvent.click(reset);
-        expect(time.textContent.split(' ').join('')).toBe('00:00:00');
-
-    })
-
-})
+export default Stopwatch;
